@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
+<script src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+
+
+<style>
+body {
+    padding: 0;
+    margin: 0;
+}
+html, body, #map {
+    height: 100%;
+    width: 100vw;
+}
+
+</style>
+</head>
+
+<body>
+	<div id="map"></div>
+<script>
+window.onload = function () {
+    var basemap = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+		attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+	});
+
+    $.getJSON("intercept-climate-and-punishment.geojson", function(data) {
+
+	function facilitiesFilter(facility){
+		return facility.properties.status === "OPEN";
+	}
+
+	var facilityIcon = L.icon({
+		iconUrl: "circle.svg",
+		iconSize:[10,10],});
+    var geojson = L.geoJson(data, {
+	pointToLayer: function (feature, latlng) {
+            return L.marker(latlng, {
+                icon: facilityIcon
+            });},
+      onEachFeature: function (feature, layer) {
+        layer.bindPopup(feature.properties.name);
+      },
+		filter: facilitiesFilter,
+    });
+
+    var map = L.map('map')
+     .fitBounds(geojson.getBounds());
+//    .setView([0.0,-10.0], 2);
+
+    basemap.addTo(map);
+    geojson.addTo(map);
+
+		//https://mesonet.agron.iastate.edu/cgi-bin/wms/us/wwa.cgi?
+
+//https://mesowest.utah.edu/cgi-bin/mapserv/?service=WMS&request=GetMap&version=1.1.1&layers=watch&styles=&format=image/png&transparent=true&watch=current/current_ww&map=/home/mesowww/www/mesowest/mapserver/master/glff.map&bgcolor=0&height=256&width=256&srs=EPSG:3857&bbox=-8766409.899970293,6261721.357121641,-7514065.628545966,7514065.628545967
+//http://localhost:8000/mesowest.utah.edu/cgi-bin/mapserv?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=watch&STYLES=&FORMAT=image/png&TRANSPARENT=true&HEIGHT=256&WIDTH=256&SRS=EPSG:3857&BBOX=-15028131.257091932,2504688.5428486546,-12523442.714243276,5009377.085697309
+
+	nwsAdvisories = new L.tileLayer.wms( "https://mesowest.utah.edu/cgi-bin/mapserv", {
+			    layers: 'watch',
+				map: "/home/mesowww/www/mesowest/mapserver/master/glff.map",
+			    format: 'image/png',
+			    transparent: true,
+			    attribution: "MesoWest & NOAA/NWS",
+				opacity: .6,
+			//    bgcolor:0x000000,
+			 //   zIndex:60,
+			});
+ 	nwsAdvisories.addTo(map);
+
+
+	//'YmdH'
+	const now = new Date().getUTCDate();
+	const formattedTime = [now.getFullYear, now.getMonth, now.getDate, now.getHours].join("");
+	const radar =new L.tileLayer('https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/ridge::USCOMP-N0R-'+
+						formattedTime+'00/{z}/{x}/{y}.png',
+		{
+			attribution:"NWS & Iowa Environmental Mesonet",
+			zIndex:100,
+			opacity:.6,
+		});
+ 	radar.addTo(map);
+
+  });
+
+};
+</script>
+</body>
+</html>
